@@ -3,6 +3,7 @@ from pynput.mouse import Listener as MouseListener, Controller as MouseControlle
 from pynput.keyboard import Listener as KeyboardListener, Key
 from pynput.keyboard import Controller as KeyboardController
 from threading import Thread
+import sys
 import random
 
 keyboard = KeyboardController()
@@ -10,6 +11,10 @@ recorded_actions = []
 start_time = None
 stop_script = False
 mouse = MouseController()
+
+runtime_minutes = int(input("Enter the number of minutes you want the script to run for: "))
+script_start_time = time.time()
+script_end_time = script_start_time + runtime_minutes * 60  # Convert minutes to seconds
 
 def on_move(x, y):
     global recorded_actions, start_time
@@ -23,9 +28,19 @@ def on_click(x, y, button, pressed):
         recorded_actions.append((action, time.time() - start_time, (x, y)))
 
 def playback():
-    global stop_script, start_time
+    global stop_script, start_time, script_start_time, script_end_time
 
     while not stop_script:
+        if time.time() > script_end_time:  # Check if the script has been running for more than the specified time
+            print("Script has been running for the specified time. Stopping playback...")
+            stop_script = True
+            return
+        
+        current_runtime_seconds = time.time() - script_start_time
+        minutes, seconds = divmod(current_runtime_seconds, 60)
+        print(f"Current runtime: {int(minutes)} minutes {int(seconds)} seconds")
+
+
         playback_start_time = time.time()
         for action, action_time, pos in recorded_actions:
             while time.time() - playback_start_time < action_time:
@@ -35,21 +50,21 @@ def playback():
                 mouse.position = pos
             elif action == 'click':
                 mouse.press(Button.left)
-                time.sleep(random.randint(50, 150) / 1000)
+                time.sleep(random.randint(50, 150) / 1000)  # Add a random delay between 50 and 150 ms
             elif action == 'release':
                 mouse.release(Button.left)
-                time.sleep(random.randint(50, 150) / 1000)
+                time.sleep(random.randint(50, 150) / 1000)  # Add a random delay between 50 and 150 ms
             elif action == 'key_press':
                 keyboard.press(pos)
-                time.sleep(random.randint(50, 150) / 1000)
+                time.sleep(random.randint(50, 150) / 1000)  # Add a random delay between 50 and 150 ms
             elif action == 'key_release':
                 keyboard.release(pos)
-                time.sleep(random.randint(50, 150) / 1000)
+                time.sleep(random.randint(50, 150) / 1000)  # Add a random delay between 50 and 150 ms
 
         start_time = None  # Reset start_time after each playback
 
 def on_press(key):
-    global recorded_actions, start_time, stop_script
+    global recorded_actions, start_time, stop_script, script_start_time, script_end_time
     if key == Key.up:
         print("Recording started...")
         start_time = time.time()
@@ -60,10 +75,13 @@ def on_press(key):
     elif key == Key.right:
         print("Playback started...")
         stop_script = False
+        script_start_time = time.time()
+        script_end_time = script_start_time + runtime_minutes * 60  # Reset the script end time
         Thread(target=playback).start()
     elif key == Key.left:
-        print("Playback stopped...")
+        print("Script stopped...")
         stop_script = True
+
     elif start_time is not None:
         recorded_actions.append(('key_press', time.time() - start_time, key))
 
