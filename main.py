@@ -3,7 +3,6 @@ from pynput.mouse import Listener as MouseListener, Controller as MouseControlle
 from pynput.keyboard import Listener as KeyboardListener, Key
 from pynput.keyboard import Controller as KeyboardController
 from threading import Thread
-import sys
 import random
 import pickle
 
